@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>FloodWatch — Monitor de Alagamento</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+  >
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+
+<body>
+
+  <nav>
+    <div class="logo">💧 Flood<span>Watch</span></div>
+
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      AO VIVO
+    </div>
+
+    <div class="nav-time" id="clock">--:--:--</div>
+  </nav>
+
+  <div class="main">
+
+    <div id="map"></div>
+
+    <aside class="sidebar">
+
+      <div class="sidebar-title">Análise do ponto monitorado</div>
+
+      <div class="selector-wrap">
+        <label for="sensorSelect">Sensor</label>
+        <select id="sensorSelect"></select>
+      </div>
+
+      <div class="date-nav">
+        <button class="date-btn" id="prevDayBtn">←</button>
+
+        <div class="date-center">
+          <div class="date-label">Dia analisado</div>
+          <div class="date-value" id="selectedDateLabel">--/--/----</div>
+        </div>
+
+        <button class="date-btn" id="nextDayBtn">→</button>
+      </div>
+
+      <div class="status-card normal" id="statusCard">
+
+        <div class="card-header">
+          <div>
+            <div class="card-location" id="sensorName">--</div>
+            <div class="card-coords" id="sensorCoords">--</div>
+          </div>
+
+          <div class="status-badge badge-normal" id="badge">
+            NORMAL
+          </div>
+        </div>
+
+        <div class="level-label">ÚLTIMO NÍVEL DO DIA</div>
+
+        <div class="level-value" id="levelVal">
+          -- <span class="level-unit">cm</span>
+        </div>
+
+        <div class="bar-wrap">
+          <div class="bar-labels">
+            <span>0 cm</span>
+            <span>30 cm máx</span>
+          </div>
+
+          <div class="bar-bg">
+            <div class="bar-fill" id="barFill"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mqtt-wrap">
+        <div class="mqtt-title">Conexão MQTT</div>
+
+        <div class="mqtt-item">
+          Status:
+          <span id="mqttStatus">Desconectado</span>
+        </div>
+
+        <div class="mqtt-item">
+          Tópico:
+          <span id="mqttTopic">--</span>
+        </div>
+
+        <div class="mqtt-item">
+          Última leitura:
+          <span id="lastReading">--</span>
+        </div>
+      </div>
+
+      <div class="weather-wrap">
+        <div class="weather-title">Meteorologia do dia</div>
+
+        <div class="weather-item">
+          Chance máx. de chuva:
+          <span id="weatherProbability">--%</span>
+        </div>
+
+        <div class="weather-item">
+          Chuva acumulada:
+          <span id="weatherPrecipitation">-- mm</span>
+        </div>
+
+        <div class="weather-item">
+          Chuva real:
+          <span id="weatherRain">-- mm</span>
+        </div>
+
+        <div class="weather-note" id="weatherNote">
+          Selecione um sensor e um dia para analisar.
+        </div>
+      </div>
+
+      <div class="thresholds">
+        <div class="threshold-title">Limites de Alerta</div>
+
+        <div class="threshold-item">
+          <div class="threshold-dot" style="background:var(--green)"></div>
+          Normal
+          <span class="threshold-range">0 – 20 cm</span>
+        </div>
+
+        <div class="threshold-item">
+          <div class="threshold-dot" style="background:var(--yellow)"></div>
+          Atenção
+          <span class="threshold-range">20 – 25 cm</span>
+        </div>
+
+        <div class="threshold-item">
+          <div class="threshold-dot" style="background:var(--red)"></div>
+          Crítico
+          <span class="threshold-range">> 25 cm</span>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-title">Nível da água por hora</div>
+        <canvas id="chart"></canvas>
+        <div class="chart-empty" id="chartEmpty">Sem dados de nível para este dia.</div>
+      </div>
+
+      <div class="demo-wrap">
+        <div class="demo-title">Simulação — Apresentação</div>
+
+        <div class="demo-buttons">
+          <button class="demo-btn btn-green" onclick="simulateLevel(10)">NORMAL</button>
+          <button class="demo-btn btn-yellow" onclick="simulateLevel(22)">ATENÇÃO</button>
+          <button class="demo-btn btn-red" onclick="simulateLevel(28)">CRÍTICO</button>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script src="script.js"></script>
+
+</body>
+</html>
