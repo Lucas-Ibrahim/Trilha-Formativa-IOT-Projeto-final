@@ -1,3 +1,5 @@
+
+
 // ─────────────────────────────────────────────
 // SENSORES CADASTRADOS MANUALMENTE
 // ─────────────────────────────────────────────
@@ -23,8 +25,6 @@ const SENSORS = [
 // O site NÃO usa Node.
 // Ele conecta direto no broker MQTT via WebSocket.
 // Para teste, está usando broker público.
-
-const MQTT_BROKER_URL = 'wss://test.mosquitto.org:8081'
 
 // ─────────────────────────────────────────────
 // ESTADO GLOBAL DA INTERFACE
@@ -229,95 +229,41 @@ function makeIcon(color) {
 function setupMqtt() {
   updateMqttStatus('Conectando...')
 
-  mqttClient = mqtt.connect(MQTT_BROKER_URL)
+  const ws = new WebSocket('ws://127.0.0.1:1880/floodwatch')
 
-  mqttClient.on('connect', () => {
+  ws.onopen = () => {
     updateMqttStatus('Conectado')
-    resubscribeMqttTopic()
-  })
-
-  mqttClient.on('message', (topic, message) => {
-    handleMqttMessage(topic, message)
-  })
-
-  mqttClient.on('error', (error) => {
-    console.error('Erro MQTT:', error)
-    updateMqttStatus('Erro')
-  })
-
-  mqttClient.on('offline', () => {
-    updateMqttStatus('Offline')
-  })
-
-  mqttClient.on('reconnect', () => {
-    updateMqttStatus('Reconectando...')
-  })
-}
-
-function resubscribeMqttTopic() {
-  if (!mqttClient || !mqttClient.connected) {
-    return
+    document.getElementById('mqttTopic').textContent = 'sensor/hcsr04'
   }
 
-  SENSORS.forEach(sensor => {
-    mqttClient.unsubscribe(sensor.topic)
-  })
+  ws.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data)
+      const level = Number(payload.level)
 
-  mqttClient.subscribe(selectedSensor.topic, (error) => {
-    if (error) {
-      console.error('Erro ao assinar tópico MQTT:', error)
-      updateMqttStatus('Erro no tópico')
-      return
-    }
+      if (isNaN(level)) return
 
-    document.getElementById('mqttTopic').textContent = selectedSensor.topic
-  })
-}
+      const now = new Date()
+      const dateKey = formatDateKey(now)
+      const hour = now.getHours()
 
-function handleMqttMessage(topic, message) {
-  try {
-    const payload = JSON.parse(message.toString())
+      if (!sensorHistory[selectedSensor.id][dateKey]) {
+        sensorHistory[selectedSensor.id][dateKey] = []
+      }
 
-    const level = Number(payload.level)
+      sensorHistory[selectedSensor.id][dateKey].push({ hour, level })
 
-    if (Number.isNaN(level)) {
-      console.warn('Leitura recebida sem level válido:', payload)
-      return
-    }
+      document.getElementById('lastReading').textContent =
+        now.toLocaleTimeString('pt-BR')
 
-    const sensor = SENSORS.find(item => item.topic === topic)
-
-    if (!sensor) {
-      return
-    }
-
-    const now = new Date()
-    const dateKey = formatDateKey(now)
-    const hour = now.getHours()
-
-    if (!sensorHistory[sensor.id]) {
-      sensorHistory[sensor.id] = {}
-    }
-
-    if (!sensorHistory[sensor.id][dateKey]) {
-      sensorHistory[sensor.id][dateKey] = []
-    }
-
-    sensorHistory[sensor.id][dateKey].push({
-      hour,
-      level
-    })
-
-    document.getElementById('lastReading').textContent =
-      now.toLocaleTimeString('pt-BR')
-
-    if (sensor.id === selectedSensor.id && dateKey === formatDateKey(selectedDate)) {
       renderDashboard()
+    } catch (e) {
+      console.error('Erro WebSocket:', e)
     }
-
-  } catch (error) {
-    console.error('Mensagem MQTT inválida:', error)
   }
+
+  ws.onerror = () => updateMqttStatus('Erro')
+  ws.onclose = () => updateMqttStatus('Desconectado')
 }
 
 function updateMqttStatus(status) {
