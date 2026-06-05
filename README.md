@@ -48,8 +48,6 @@ Dashboard Web (HTML/CSS/JS)
 
 ---
 
-## Como rodar
-
 ### Pré-requisitos
 
 - [Node.js](https://nodejs.org/) (para o Node-RED)
@@ -78,54 +76,9 @@ node-red
 [MQTT In: sensor/hcsr04] → [Function] → [WebSocket Out: /floodwatch]
 ```
 
-**Código da Function (média de 10 leituras + conversão):**
-
-```js
-const data = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;
-
-if (!context.readings) context.readings = [];
-context.readings.push(data.distancia);
-
-if (context.readings.length < 10) return null;
-
-const media = context.readings.reduce((a, b) => a + b, 0) / 10;
-context.readings = [];
-
-const nivel = Math.round(23 - media); // ajustar 23 para altura real do sensor
-
-msg.payload = JSON.stringify({ level: nivel });
-return msg;
-```
-
-> ⚠️ Ajuste o valor `23` para a altura real (em cm) entre o sensor e o fundo do recipiente.
-
 **Nó WebSocket Out:**
 - Tipo: `Ouvir em`
 - Path: `/floodwatch`
-
-### 3. Firmware ESP8266
-
-Abra `ProjetoIoT.ino` na Arduino IDE e ajuste:
-
-```cpp
-const char* ssid     = "SUA_REDE";
-const char* password = "SUA_SENHA";
-const char* mqtt_server = "IP_DO_SEU_BROKER"; // ex: 192.168.1.110
-```
-
-Pinos do HC-SR04:
-```cpp
-#define TRIG_PIN D5
-#define ECHO_PIN D6
-```
-
-Selecione a placa `NodeMCU 0.9 (ESP-12 Module)` e faça o upload.
-
-### 4. Site
-
-Abra `index.html` com o Live Server do VSCode.  
-**Use Chrome** — Safari bloqueia WebSocket em `localhost`.
-
 ---
 
 ## Funcionalidades
@@ -140,11 +93,11 @@ Abra `index.html` com o Live Server do VSCode.
 
 ### Limites de alerta
 
-| Status | Faixa |
+| Status |
 |---|---|
-| 🟢 Normal | 0 – 20 cm |
-| 🟡 Atenção | 20 – 25 cm |
-| 🔴 Crítico | > 25 cm |
+| 🟢 Normal | 
+| 🟡 Atenção | 
+| 🔴 Crítico | 
 
 ---
 
