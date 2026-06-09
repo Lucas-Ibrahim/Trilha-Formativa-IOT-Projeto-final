@@ -78,7 +78,7 @@
         <div class="bar-wrap">
           <div class="bar-labels">
             <span>0 cm</span>
-            <span>30 cm máx</span>
+            <span>11 cm máx</span>
           </div>
 
           <div class="bar-bg">
@@ -104,6 +104,25 @@
         <div class="mqtt-item">
           Última leitura:
           <span id="lastReading">--</span>
+        </div>
+      </div>
+
+      <div class="weather-wrap" id="forecastCard">
+        <div class="weather-title">Previsão de Nível Crítico</div>
+
+        <div class="weather-item">
+          Velocidade:
+          <span id="forecastSpeed">-- cm/min</span>
+        </div>
+
+        <div class="weather-item">
+          Tendência:
+          <span id="forecastTrend" style="color:var(--gray)">Aguardando leituras...</span>
+        </div>
+
+        <div class="weather-item" id="forecastTimeRow" style="display:none">
+          Tempo até crítico:
+          <span id="forecastTime" style="color:var(--red)">--</span>
         </div>
       </div>
 

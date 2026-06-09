@@ -1,5 +1,3 @@
-
-
 // ─────────────────────────────────────────────
 // SENSORES CADASTRADOS MANUALMENTE
 // ─────────────────────────────────────────────
@@ -42,7 +40,18 @@ let marker = null
 
 const markersBySensorId = {}
 
-const MAX_LEVEL = 30
+const MAX_LEVEL = 11
+
+// ─────────────────────────────────────────────
+// ESTADO — VELOCIDADE E PREVISÃO
+// ─────────────────────────────────────────────
+
+let lastLevelValue = null
+let lastLevelTime = null
+
+// ─────────────────────────────────────────────
+// ESTADO — VELOCIDADE E PREVISÃO
+// ─────────────────────────────────────────────
 
 // Histórico por sensor e por data.
 // Quando vier dado real do MQTT, ele entra aqui.
@@ -114,7 +123,7 @@ function setupSensorSelect() {
     select.appendChild(option)
   })
 
-  select.value = selectedSensor.id
+  select.value = (selectedSensor.id)
 
   select.addEventListener('change', () => {
     selectedSensor = SENSORS.find(sensor => sensor.id === select.value)
@@ -256,6 +265,20 @@ function setupMqtt() {
       document.getElementById('lastReading').textContent =
         now.toLocaleTimeString('pt-BR')
 
+      // ── Velocidade e previsão ──
+      if (lastLevelValue !== null && lastLevelTime !== null) {
+        const minutosPassados = (now - lastLevelTime) / 60000
+        if (minutosPassados > 0) {
+          const velocidade = (level - lastLevelValue) / minutosPassados
+          updateForecastCard(level, velocidade)
+        }
+      } else {
+        updateForecastCard(level, null)
+      }
+
+      lastLevelValue = level
+      lastLevelTime = now
+
       renderDashboard()
     } catch (e) {
       console.error('Erro WebSocket:', e)
@@ -315,7 +338,7 @@ function updateLevelCard(cm) {
   card.className = 'status-card ' + status.statusClass
 
   const levelVal = document.getElementById('levelVal')
-  levelVal.innerHTML = `${cm} <span class="level-unit">cm</span>`
+  levelVal.innerHTML = `${Number(cm).toFixed(1)} <span class="level-unit">cm</span>`
   levelVal.style.color = status.color
 
   const pct = Math.min(cm / MAX_LEVEL, 1)
@@ -377,7 +400,7 @@ function updateMarkerForSelectedSensor() {
 }
 
 function getStatusFromLevel(cm) {
-  if (cm > 25) {
+  if (cm > 9) {
     return {
       color: '#f54444',
       statusClass: 'critical',
@@ -386,7 +409,7 @@ function getStatusFromLevel(cm) {
     }
   }
 
-  if (cm > 20) {
+  if (cm > 7) {
     return {
       color: '#f5c400',
       statusClass: 'warning',
@@ -656,6 +679,57 @@ function simulateLevel(level) {
     new Date().toLocaleTimeString('pt-BR')
 
   renderDashboard()
+}
+
+// ─────────────────────────────────────────────
+// VELOCIDADE E PREVISÃO
+// ─────────────────────────────────────────────
+
+function updateForecastCard(level, velocidade) {
+  const el = document.getElementById('forecastCard')
+  if (!el) return
+
+  const velEl = document.getElementById('forecastSpeed')
+  const trendEl = document.getElementById('forecastTrend')
+  const timeEl = document.getElementById('forecastTime')
+  const timeRow = document.getElementById('forecastTimeRow')
+
+  if (velocidade === null) {
+    velEl.textContent = '-- cm/min'
+    trendEl.textContent = 'Aguardando leituras...'
+    trendEl.style.color = 'var(--gray)'
+    timeRow.style.display = 'none'
+    return
+  }
+
+  velEl.textContent = `${velocidade.toFixed(2)} cm/min`
+
+  if (velocidade > 0.05) {
+    trendEl.textContent = '↑ Subindo'
+    trendEl.style.color = 'var(--red)'
+
+    const minutosParaCritico = (25 - level) / velocidade
+    if (minutosParaCritico > 0) {
+      timeRow.style.display = 'flex'
+      if (minutosParaCritico < 60) {
+        timeEl.textContent = `${Math.round(minutosParaCritico)} min`
+      } else {
+        const h = Math.floor(minutosParaCritico / 60)
+        const m = Math.round(minutosParaCritico % 60)
+        timeEl.textContent = `${h}h ${m}min`
+      }
+    } else {
+      timeRow.style.display = 'none'
+    }
+  } else if (velocidade < -0.05) {
+    trendEl.textContent = '↓ Descendo'
+    trendEl.style.color = 'var(--green)'
+    timeRow.style.display = 'none'
+  } else {
+    trendEl.textContent = '→ Estável'
+    trendEl.style.color = 'var(--gray)'
+    timeRow.style.display = 'none'
+  }
 }
 
 // ─────────────────────────────────────────────
